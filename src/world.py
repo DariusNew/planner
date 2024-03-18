@@ -7,7 +7,7 @@ from algorithm import depthFirstSearch
 
 
 class World:
-    def __init__(self, height: int = 20, width: int = 20):
+    def __init__(self, height: int = 25, width: int = 25):
         self._allowDiagonal = False
         self._prob = 0.35
         self._height = height
