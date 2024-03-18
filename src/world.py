@@ -15,7 +15,6 @@ class World:
         self.robot = GridCell(0, 0)
         self._goal = GridCell(self._width - 1, self._height - 1)
         self.grid = np.zeros((self._width, self._height))
-        self.visited = np.zeros((self._width, self._height))
         self.generateObstacles()
         self.frames = [self.grid]
 
@@ -34,8 +33,8 @@ class World:
         count = 0
         reached = False
         while count < 10:
-            self.visited = np.zeros((self._width, self._height))
-            reached = depthFirstSearch(self._height, self._width, self._goal, self.robot, self.grid, self.visited, self._allowDiagonal, init = True)
+            visited = np.zeros((self._width, self._height))
+            reached = depthFirstSearch(self._height, self._width, self._goal, self.robot, self.grid, visited, self._allowDiagonal, init = True)
             if reached:
                 break
             count += 1
@@ -69,9 +68,9 @@ class World:
                         self.grid[i][j-1] = 0
 
     def vis(self):
-        cmap = ListedColormap(['w', 'k', 'r', 'b', 'y', 'g'])
+        cmap = ListedColormap(['w', 'k', 'r', 'b', 'y', 'c' ,'g'])
         self.grid[self.robot.x][self.robot.y] = 2
-        self.grid[self._goal.x][self._goal.y] = 5
+        self.grid[self._goal.x][self._goal.y] = 6
 
         fig, ax = plt.subplots()
         ax.matshow(self.grid, cmap=cmap)

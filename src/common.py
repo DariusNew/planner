@@ -19,7 +19,7 @@ class Node:
         self.f = 0
 
     def __repr__(self):
-        return "[" + str(self.position.x) + ", " + str(self.position.y) + ", " + str(self.f) + "]"
+        return "[" + str(self.position.x) + ", " + str(self.position.y) + "]"
 
     def __eq__(self, other):
         return self.position == other.position
