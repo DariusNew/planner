@@ -1,3 +1,5 @@
+import heapq
+import copy
 from common import GridCell
 from common import Node
 import sys
@@ -47,22 +49,13 @@ def aStarPlanner(world):
 
     openList = []
     closedList = []
-
-    openList.append(startNode)
+    heapq.heappush(openList, startNode)
 
     # Loop till we find the end node 
     while(len(openList) > 0):
-        currentNode = openList[0]
-        currentIndex = 0
-
-        # Find the node with the lowest f value (f = g + h) in the open list
-        for index, item in enumerate(openList):
-            if item.f < currentNode.f:
-                currentNode = item
-                currentIndex = index
-        openList.pop(currentIndex)
+    # for i in range(10):
+        currentNode = heapq.heappop(openList)
         closedList.append(currentNode)
-
         # if we found the goal, back track through all the parents and reverse this path
         if currentNode == endNode:
             print("a star path found")
@@ -85,29 +78,42 @@ def aStarPlanner(world):
             newPositionList = [GridCell(-1, 1), GridCell(-1, 0), GridCell(-1, -1), GridCell(0, -1), GridCell(1, -1), GridCell(1, 0), GridCell(1, 1), GridCell(0, 1)]
 
         for newPosition in newPositionList:
+            cont = True
             newPos = GridCell(currentNode.position.x + newPosition.x, currentNode.position.y + newPosition.y)
 
             if not inWorld(newPos, world._width, world._height):
-                continue
+                cont = False
 
-            if world.grid[newPos.x][newPos.y] == 1:
-                continue
+            if cont and world.grid[newPos.x][newPos.y] == 1:
+                cont = False
         
-            newNode = Node(currentNode, newPos)
-            children.append(newNode)
+            if cont:
+                newNode = Node(currentNode, newPos)
+                children.append(newNode)
         
         for child in children:
-            for closedNode in closedList:
-                if child == closedNode:
-                    continue
+            cont = True
+            if child in closedList:
+                cont = False
 
-            child.g = currentNode.g + 1
-            child.h = euclideanDist(child.position.x, child.position.y, endNode.position.x, endNode.position.y)
-            child.f = child.g + child.h
-
-            for openNode in openList:
-                if child == openNode and child.g > openNode.g:
-                    continue
+            if cont:
+                child.g = currentNode.g + 1
+                child.h = euclideanDist(child.position.x, child.position.y, endNode.position.x, endNode.position.y)
+                child.f = child.g + child.h
             
-            openList.append(child)
+            for openNode in openList:    
+                if child == openNode and child.g >= openNode.g:
+                    cont = False
+                elif child == openNode and child.g < openNode.g:
+                    openList.remove(openNode)
+                    cont = True
+            
+            if cont:
+                heapq.heappush(openList, child)
 
+        # for vis
+        grid = copy.deepcopy(world.grid)
+        grid[currentNode.position.x][currentNode.position.y] = 3
+        for node in openList:
+            grid[node.position.x][node.position.y] = 4
+        world.frames.append(grid)

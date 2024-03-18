@@ -19,7 +19,19 @@ class Node:
         self.f = 0
 
     def __repr__(self):
-        return "[" + str(self.position.x) + ", " + str(self.position.y) + "]"
+        return "[" + str(self.position.x) + ", " + str(self.position.y) + ", " + str(self.f) + "]"
 
     def __eq__(self, other):
         return self.position == other.position
+    
+    def __ge__(self, other):
+        return self.f >= other.f
+    
+    def __gt__(self, other):
+        return self.f > other.f
+
+    def __le__(self, other):
+        return self.f <= other.f
+    
+    def __lt__(self, other):
+        return self.f < other.f

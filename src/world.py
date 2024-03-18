@@ -4,10 +4,10 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 from common import GridCell
 from algorithm import depthFirstSearch
-from algorithm import aStarPlanner
+
 
 class World:
-    def __init__(self, height: int = 10, width: int = 10):
+    def __init__(self, height: int = 20, width: int = 20):
         self._allowDiagonal = False
         self._prob = 0.35
         self._height = height
@@ -17,6 +17,7 @@ class World:
         self.grid = np.zeros((self._width, self._height))
         self.visited = np.zeros((self._width, self._height))
         self.generateObstacles()
+        self.frames = [self.grid]
 
     def generateObstacles(self):
         for i in range(self._width):
@@ -68,9 +69,9 @@ class World:
                         self.grid[i][j-1] = 0
 
     def vis(self):
-        cmap = ListedColormap(['w', 'k', 'r', 'b', 'g'])
+        cmap = ListedColormap(['w', 'k', 'r', 'b', 'y', 'g'])
         self.grid[self.robot.x][self.robot.y] = 2
-        self.grid[self._goal.x][self._goal.y] = 4
+        self.grid[self._goal.x][self._goal.y] = 5
 
         fig, ax = plt.subplots()
         ax.matshow(self.grid, cmap=cmap)
@@ -79,7 +80,3 @@ class World:
 
         plt.show()
 
-world = World()
-world.vis()
-print(aStarPlanner(world))
-world.vis()
