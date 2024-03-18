@@ -1,13 +1,13 @@
+import copy
+import argparse
 from timeit import default_timer as timer
-from algorithm import aStarPlanner
-from algorithm import rrtPlanner
-from world import World
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib.animation import FuncAnimation
-import copy
 
-import argparse
+from astar import aStarPlanner
+from rrt import rrtPlanner
+from world import World
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Planner configuration')

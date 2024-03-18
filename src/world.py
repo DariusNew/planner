@@ -2,9 +2,7 @@ import random
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
-from common import GridCell
-from algorithm import depthFirstSearch
-
+from common import *
 
 class World:
     def __init__(self, height: int = 25, width: int = 25):

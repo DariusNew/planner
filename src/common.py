@@ -1,3 +1,6 @@
+import sys
+sys.setrecursionlimit(10000)
+
 class GridCell:
     def __init__(self, x: int = 0, y: int = 0):
         self.x = x
@@ -35,3 +38,58 @@ class Node:
     
     def __lt__(self, other):
         return self.f < other.f
+
+def inWorld(pos: GridCell, width: int, height: int):
+    status = False
+    if pos.x >= 0 and pos.x < width and pos.y >= 0 and pos.y < height:
+        status = True
+    return status
+
+def checkValid(pos: GridCell, world):
+    cont = True
+
+    # check new position valid
+    if not inWorld(pos, world._width, world._height):
+        cont = False
+
+    # check new position is not an obstacle
+    if cont and world.grid[pos.x][pos.y] == 1:
+        cont = False
+
+    return cont
+
+def euclideanDist(x1, y1, x2, y2):
+    return (x1 - x2) **2 + (y1 - y2)**2
+
+def generateNewPositionList(allowDiag: bool):
+    ls = []
+    if not allowDiag:
+        ls = [GridCell(-1, 0), GridCell(0, -1), GridCell(1, 0), GridCell(0, 1)]
+    else:
+        ls = [GridCell(-1, 1), GridCell(-1, 0), GridCell(-1, -1), GridCell(0, -1), GridCell(1, -1), GridCell(1, 0), GridCell(1, 1), GridCell(0, 1)]
+
+    return ls
+
+def depthFirstSearch(height: int, width: int, goal: GridCell, pos: GridCell, grid, visited, allowDiagonal, init = False):
+    if init:
+        global reached
+        reached = False
+
+    if pos == goal:
+        reached = True
+    else:
+        visited[pos.x][pos.y] = 1
+        
+        # check left right up down
+        newPositionList = generateNewPositionList(allowDiagonal)
+        for newPosition in newPositionList:
+            newPos = GridCell(pos.x + newPosition.x, pos.y + newPosition.y)
+
+            if inWorld(newPos, width, height) and grid[newPos.x][newPos.y] != 1 and visited[newPos.x][newPos.y] == 0:
+                    depthFirstSearch(height, width, goal, newPos, grid, visited, allowDiagonal)
+                    visited[newPos.x][newPos.y] = 1
+ 
+    if reached:
+        return True
+    else:
+        return False
