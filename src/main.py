@@ -7,11 +7,12 @@ from matplotlib.animation import FuncAnimation
 
 from astar import aStarPlanner
 from rrt import rrtPlanner
+from genetic import geneticPlanner
 from world import World
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Planner configuration')
-    parser.add_argument('-p', '--planner', dest='planner', type=str, choices=['a*', 'rrt', 'compare'], default='compare', help='[a*, rrt, compare] (default: compare)')
+    parser.add_argument('-p', '--planner', dest='planner', type=str, choices=['a*', 'rrt', 'compare', 'gen'], default='compare', help='[a*, rrt, compare, gen] (default: compare)')
     parser.add_argument('-v', '--visualise', dest='visualise', type=int, choices=[0,1], default=1, help='[0 for no vis, 1 for vis] (default: 1)')
     args = parser.parse_args()
 
@@ -101,5 +102,11 @@ if __name__ == "__main__":
                 return [plot2]
             anim2 = FuncAnimation(fig2, update2, init_func=init2, frames = len(rrtWorld.frames), interval = 30, repeat=False)
             plt.show()
+
+    elif args.planner == 'gen': 
+        start = timer()
+        geneticPlanner(world)
+        end = timer()
+        print("time taken: ", end-start)
 
     print('exit')
