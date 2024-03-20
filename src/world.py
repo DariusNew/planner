@@ -21,12 +21,12 @@ class World:
             for j in range(self._height):
                 prob = random.randint(0,100)/100
                 if prob <= self._prob:
-                    self.grid[i][j] = 1
+                    self.grid[i][j] = OBSTACLE
                 else:
-                    self.grid[i][j] = 0
+                    self.grid[i][j] = FREE
         
-        self.grid[self.robot.x][self.robot.y] = 2
-        self.grid[self._goal.x][self._goal.y] = 3
+        self.grid[self.robot.x][self.robot.y] = ROBOT
+        self.grid[self._goal.x][self._goal.y] = GOAL
 
         count = 0
         reached = False
@@ -39,36 +39,36 @@ class World:
             # print(count, reached)
             for i in range(self._width):
                 for j in range(self._height):
-                    if self.grid[i][j] == 0:
+                    if self.grid[i][j] == FREE:
                         ## down left
                         if not self._allowDiagonal:
                             for direction in range(2):
                                 prob = random.randint(0,100)/100                  
                                 if direction == 0 and i-1 >= 0 and i-1 < self._width and prob <= self._prob: 
-                                    self.grid[i-1][j] = 0
+                                    self.grid[i-1][j] = FREE
                                 elif direction == 1 and j-1 >= 0 and j-1 < self._height and prob <= self._prob:
-                                    self.grid[i][j-1] = 0      
+                                    self.grid[i][j-1] = FREE    
 
                         else: 
                             for direction in range(3):
                                 prob = random.randint(0,100)/100                  
                                 if direction == 0 and i-1 >= 0 and i-1 < self._width and prob <= self._prob: 
-                                    self.grid[i-1][j] = 0
+                                    self.grid[i-1][j] = FREE
                                 elif direction == 1 and j-1 >= 0 and j-1 < self._height and prob <= self._prob:
-                                    self.grid[i][j-1] = 0   
+                                    self.grid[i][j-1] = FREE 
                                 elif direction == 2 and i-1 >= 0 and i-1 < self._width and j-1 >= 0 and j-1 < self._height and prob <= self._prob:
-                                    self.grid[i-1][j-1] = 0      
-                    elif self.grid[i][j] == 2:
-                        self.grid[i+1][j] = 0
-                        self.grid[i][j+1] = 0
-                    elif self.grid[i][j] == 3:
-                        self.grid[i-1][j] = 0
-                        self.grid[i][j-1] = 0
+                                    self.grid[i-1][j-1] = FREE      
+                    elif self.grid[i][j] == ROBOT:
+                        self.grid[i+1][j] = FREE
+                        self.grid[i][j+1] = FREE
+                    elif self.grid[i][j] == GOAL:
+                        self.grid[i-1][j] = FREE
+                        self.grid[i][j-1] = FREE
 
     def vis(self):
         cmap = ListedColormap(['w', 'k', 'r', 'b', 'y', 'c' ,'g'])
-        self.grid[self.robot.x][self.robot.y] = 2
-        self.grid[self._goal.x][self._goal.y] = 6
+        self.grid[self.robot.x][self.robot.y] = ROBOT
+        self.grid[self._goal.x][self._goal.y] = GOAL
 
         fig, ax = plt.subplots()
         ax.matshow(self.grid, cmap=cmap)

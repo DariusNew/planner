@@ -20,9 +20,9 @@ def aStarPlanner(world):
             print("a star path found")
             # for vis
             grid = copy.deepcopy(world.grid)
-            grid[currentNode.position.x][currentNode.position.y] = 3
+            grid[currentNode.position.x][currentNode.position.y] = PATH
             for node in openList:
-                grid[node.position.x][node.position.y] = 4
+                grid[node.position.x][node.position.y] = PLANNER_PATH_1
             world.frames.append(grid)
             # for path
             curr = currentNode
@@ -32,7 +32,7 @@ def aStarPlanner(world):
                 curr = curr.parent
             path.append(startNode)
             for node in path[1:-1]:
-                world.grid[node.position.x][node.position.y] = 3
+                world.grid[node.position.x][node.position.y] = PATH
             return path[::-1]
         
         # if not yet found the goal, we generate the search space and calculate all their f
@@ -69,7 +69,7 @@ def aStarPlanner(world):
 
         # for vis
         grid = copy.deepcopy(world.grid)
-        grid[currentNode.position.x][currentNode.position.y] = 3
+        grid[currentNode.position.x][currentNode.position.y] = PATH
         for node in openList:
-            grid[node.position.x][node.position.y] = 4
+            grid[node.position.x][node.position.y] = PLANNER_PATH_1
         world.frames.append(grid)

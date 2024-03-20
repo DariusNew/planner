@@ -1,6 +1,14 @@
 import sys
 sys.setrecursionlimit(10000)
 
+FREE = 0
+OBSTACLE = 1
+ROBOT = 2
+PATH = 3
+PLANNER_PATH_1 = 4
+PLANNER_PATH_2 = 5
+GOAL = 6
+
 class GridCell:
     def __init__(self, x: int = 0, y: int = 0):
         self.x = x
@@ -53,7 +61,7 @@ def checkValid(pos: GridCell, world):
         cont = False
 
     # check new position is not an obstacle
-    if cont and world.grid[pos.x][pos.y] == 1:
+    if cont and world.grid[pos.x][pos.y] == OBSTACLE:
         cont = False
 
     return cont
@@ -85,7 +93,7 @@ def depthFirstSearch(height: int, width: int, goal: GridCell, pos: GridCell, gri
         for newPosition in newPositionList:
             newPos = GridCell(pos.x + newPosition.x, pos.y + newPosition.y)
 
-            if inWorld(newPos, width, height) and grid[newPos.x][newPos.y] != 1 and visited[newPos.x][newPos.y] == 0:
+            if inWorld(newPos, width, height) and grid[newPos.x][newPos.y] != OBSTACLE and visited[newPos.x][newPos.y] == 0:
                     depthFirstSearch(height, width, goal, newPos, grid, visited, allowDiagonal)
                     visited[newPos.x][newPos.y] = 1
  

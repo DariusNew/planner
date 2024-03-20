@@ -12,6 +12,7 @@ def rrtPlanner(world):
     midNode = startNode
     forwardOnly = False
     reverseOnly = False
+
     while not pathFound:
         randPos = GridCell(random.randrange(0, world._width), random.randrange(0, world._height))
         # print ("random position: ", randPos)
@@ -109,9 +110,9 @@ def rrtPlanner(world):
                     # for vis
                     grid = copy.deepcopy(world.grid)
                     for node in forwardTree[1:]:
-                        grid[node.position.x][node.position.y] = 4
+                        grid[node.position.x][node.position.y] = PLANNER_PATH_1
                     for node in reverseTree[:-1]:
-                        grid[node.position.x][node.position.y] = 5
+                        grid[node.position.x][node.position.y] = PLANNER_PATH_2
                     grid[randPos.x][randPos.y] = 3
                     world.frames.append(grid)
 
@@ -124,7 +125,7 @@ def rrtPlanner(world):
                             curr = curr.parent
                         path.append(startNode)
                         for node in path[1:-1]:
-                            world.grid[node.position.x][node.position.y] = 3
+                            world.grid[node.position.x][node.position.y] = PATH
                         return path[::-1]
                     elif reverseOnly:
                         # for path
@@ -135,7 +136,7 @@ def rrtPlanner(world):
                             curr = curr.parent
                         path.append(endNode)
                         for node in path[1:-1]:
-                            world.grid[node.position.x][node.position.y] = 3
+                            world.grid[node.position.x][node.position.y] = PATH
                         return path
                     else:
                         currForward = forwardTree[forwardTree.index(midNode)]
@@ -152,15 +153,15 @@ def rrtPlanner(world):
                             currReverse = currReverse.parent
                         path.append(endNode)
                         for node in path[1:-1]:
-                            world.grid[node.position.x][node.position.y] = 3
+                            world.grid[node.position.x][node.position.y] = PATH
                         return path
                 
                     
             # for vis
             grid = copy.deepcopy(world.grid)
             for node in forwardTree[1:]:
-                grid[node.position.x][node.position.y] = 4
+                grid[node.position.x][node.position.y] = PLANNER_PATH_1
             for node in reverseTree[:-1]:
-                grid[node.position.x][node.position.y] = 5
+                grid[node.position.x][node.position.y] = PLANNER_PATH_2
             grid[randPos.x][randPos.y] = 3
             world.frames.append(grid)
