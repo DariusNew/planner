@@ -24,6 +24,7 @@ def aStarPlanner(world):
             for node in openList:
                 grid[node.position.x][node.position.y] = PLANNER_PATH_1
             world.frames.append(grid)
+        
             # for path
             curr = currentNode
             path = []

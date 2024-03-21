@@ -163,5 +163,5 @@ def rrtPlanner(world):
                 grid[node.position.x][node.position.y] = PLANNER_PATH_1
             for node in reverseTree[:-1]:
                 grid[node.position.x][node.position.y] = PLANNER_PATH_2
-            grid[randPos.x][randPos.y] = 3
+            grid[randPos.x][randPos.y] = PATH
             world.frames.append(grid)
