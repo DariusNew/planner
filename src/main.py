@@ -16,8 +16,9 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--visualise', dest='visualise', type=int, choices=[0,1], default=1, help='[0 for no vis, 1 for vis] (default: 1)')
     args = parser.parse_args()
 
-    world = World(50,50)
+    world = World(30,30)
     world.vis()
+    cmap = ListedColormap(['w', 'k', 'r', 'b', 'y', 'c' ,'g'])
  
     if args.planner == 'a*':
         start = timer()
@@ -27,7 +28,6 @@ if __name__ == "__main__":
         world.vis()
 
         if args.visualise == 1:
-            cmap = ListedColormap(['w', 'k', 'r', 'b', 'y', 'c' ,'g'])
             fig = plt.figure()
             plot = plt.matshow(world.frames[0], cmap=cmap, fignum=0)
 
@@ -49,7 +49,6 @@ if __name__ == "__main__":
         world.vis()
 
         if args.visualise == 1:
-            cmap = ListedColormap(['w', 'k', 'r', 'b', 'y', 'c' ,'g'])
             fig = plt.figure()
             plot = plt.matshow(world.frames[0], cmap=cmap, fignum=0)
 
@@ -77,7 +76,6 @@ if __name__ == "__main__":
         print("rrt: ", rrtEnd-aStarStart)
 
         if args.visualise == 1:
-            cmap = ListedColormap(['w', 'k', 'r', 'b', 'y', 'c' ,'g'])
             fig1 = plt.figure(1)
             plot1 = plt.matshow(aStarWorld.frames[0], cmap=cmap, fignum=0)
 
@@ -108,5 +106,19 @@ if __name__ == "__main__":
         geneticPlanner(world)
         end = timer()
         print("time taken: ", end-start)
+
+        if args.visualise == 1:
+            fig = plt.figure()
+            plot = plt.matshow(world.frames[0], cmap=cmap, fignum=0)
+            
+            def init():
+                plot.set_data(world.frames[0])
+                return plot
+
+            def update(i):
+                plot.set_data(world.frames[i])
+                return [plot]
+            anim = FuncAnimation(fig, update, init_func=init, frames = len(world.frames), interval = 200, repeat=True)
+            plt.show()
 
     print('exit')

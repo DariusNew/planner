@@ -1,13 +1,15 @@
 import random
 import heapq
 import copy
+import tqdm
 from common import *
 
 class Individual:
     def __init__(self):
-        self.path = []
         self.movement = []
+        self.path = []
         self.fitness = 0
+        self.reached = False
 
     def __repr__(self):
         ans = ""
@@ -27,147 +29,154 @@ class Individual:
     def __lt__(self, other):
         return self.fitness < other.fitness
 
-def createPopulation(size: int, length: int, startPos: GridCell, newPositionList):
+def createPopulation(size: int, length: int, newPositionList):
     populationList = []
     # create a population with completely random moves
     for i in range(size):
         individual = Individual()
-        pos = startPos
-        individual.path.append(pos)
 
         for j in range(length):
-            direction = newPositionList[random.randrange(0, len(newPositionList))]
-            newPos = GridCell(pos.x + direction.x, pos.y + direction.y)
-            # we want to prevent back tracking.
-            if newPos not in individual.path:
-                individual.path.append(newPos)
-                pos = newPos
-            individual.movement.append(direction)
+            individual.movement.append(newPositionList[random.randrange(0, len(newPositionList))])
 
         populationList.append(individual)
     return populationList
 
-def findFitness(populationList, length: int, world):
+def findFitness(populationList, world):
     for indv in populationList:
-        blocked = False
-        valid = True
-        reached = False
-        lastPointIndex = -1
-        for point in indv.path:
-            if not checkValid(point, world):
-                valid = False
-                break
-            elif world.grid[point.x][point.y] == 1:
-                blocked = True
-                break
-            elif point == world._goal:
-                reached = True
-                lastPointIndex += 1
+        blocked = 0
+        valid = 0
+        backtrack = 0
+
+        pos = world.robot
+        indv.path = []
+        indv.path.append(pos)
+        for direction in indv.movement:
+            newPos = GridCell(pos.x + direction.x, pos.y + direction.y)
+            if not checkValid(newPos, world):
+                valid += 1
+            elif world.grid[newPos.x][newPos.y] == OBSTACLE:
+                blocked += 1
+            elif newPos == world._goal:
+                if newPos in indv.path:
+                    backtrack += 1
+                indv.path.append(newPos)
+                indv.reached = True
                 break
             else:
-                lastPointIndex += 1
+                if newPos in indv.path:
+                    backtrack += 1
+                indv.path.append(newPos)
+                pos = newPos
+
+        distanceReward = 0
+        for node in indv.path:
+            distanceReward += euclideanDist(node.x, node.y, world._goal.x, world._goal.y)
+        penalty = valid + blocked + backtrack
+        endReward = euclideanDist(indv.path[-1].x, indv.path[-1].y, world._goal.x, world._goal.y)
         
-        lastPoint = indv.path[lastPointIndex]
-        # exit proximity reward
-        distanceReward = euclideanDist(lastPoint.x, lastPoint.y, world._goal.x, world._goal.y) ## smaller is better
-        # exploration reward
-        lengthReward = length - lastPointIndex ## smaller is better
-        # not valid penalty
-        penalty = 0
-        if not valid:
-            penalty += lengthReward * 10 ## penalise over where the last point index is along the path.
-        # dead end penalty
-        if blocked:
-            penalty += lengthReward * 20 ## penalise over where the last point index is along the path.
-        # reward if reached the goal
-        if reached:
-            indv.fitness = 0
+        if not indv.reached:
+            indv.fitness = distanceReward/len(indv.path) + penalty * 40 + len(indv.path) * 10 + endReward   
+            # print(indv.fitness, distanceReward / len(indv.path), penalty, len(indv.path), endReward)
         else:
-            indv.fitness = distanceReward + lengthReward + penalty     
+            indv.fitness = distanceReward/len(indv.path) + penalty * 40 + len(indv.path) * 10 + endReward - 400
         
+        if (indv.fitness < 0):
+            indv.fitness = 1
+        # print(indv, indv.fitness)
+
 def mutate(indv: Individual, length: int, mutateProb: int, newPositionList):
     individual = Individual()
-    pos = indv.path[0]
+
     for i in range(length):
         prob = random.randint(0,100)
         if prob <= mutateProb:
             # mutate
-            direction = newPositionList[random.randrange(0, len(newPositionList))]
+            direction = GridCell(0,0)
+            while direction != indv.movement[i]:
+                direction = newPositionList[random.randrange(0, len(newPositionList))]
         else:
             # take wholesale
             direction = indv.movement[i]
 
-        newPos = GridCell(pos.x + direction.x, pos.y + direction.y)
-        # we want to prevent back tracking.
-        if newPos not in individual.path:
-            individual.path.append(newPos)
-            pos = newPos
         individual.movement.append(direction)
-        
     return individual
 
-def crossover(left: Individual, right: Individual, length: int):
+def dropOffMutate(indv: Individual):
+    individual = Individual()  
+    drop = random.randrange(0, len(indv.movement))
+    for i in range(len(indv.movement)):
+        if i != drop:
+            individual.movement.append(indv.movement[i])
+    individual.movement.append(indv.movement[drop])
+    return individual
+
+def crossover(left: Individual, newPositionList, length: int):
     individual = Individual()
     loc = random.randrange(0, length)
     for i in range(loc):
         individual.movement.append(left.movement[i])
     for j in range(loc, length):
-        individual.movement.append(right.movement[j])
-    
-    pos = left.path[0]
-    for direction in range(individual.movement):
-        newPos = GridCell(pos.x + direction.x, pos.y + direction.y)
-        if newPos not in individual.path:
-            individual.path.append(newPos)
-            pos = newPos
+        individual.movement.append(newPositionList[random.randrange(0, len(newPositionList))])
 
     return individual
 
-def geneticPlanner(world, iterations: int = 5000):
-    populationSize = 100
-    mutationProb = 30 
-    eliteProb = 20 
-    maxLength = max(world._width, world._height)*2
+def geneticPlanner(world, iterations: int = 500):
+    populationSize = 1000
+    mutationProb = 50
+    dropOffMutationProb = 90
+    maxLength = max(world._width, world._height)*4
     newPositionList = generateNewPositionList(world._allowDiagonal)
-    populationList = createPopulation(populationSize, maxLength, world.robot, newPositionList)
+    populationList = createPopulation(populationSize, maxLength, newPositionList)
+    bestIndividual = Individual()
 
-    for i in range(iterations):
-        findFitness(populationList, populationSize, world)
+    for iter in tqdm.tqdm(range(iterations)):
+        findFitness(populationList, world)
         heapq.heapify(populationList)
+        
+        elite = []
+        for j in range(random.randrange(100, int(populationSize/2))):
+            ind = heapq.heappop(populationList)
+            elite.append(ind)
+        bestIndividual = elite[0]
+        # print("cycle: ", iter, "fitness: ", bestIndividual.fitness)
 
-        bestIndividual = heapq.heap[0]
-        print("cycle: ", i, "fitness: ", bestIndividual.fitness)
-        if bestIndividual.fitness == 0:
-            print("path found")
-            return print(bestIndividual)       
+        # for vis
+        grid = copy.deepcopy(world.grid)
+        for node in bestIndividual.path[1:-1]:
+            if grid[node.x][node.y] != ROBOT and grid[node.x][node.y] != GOAL:
+                grid[node.x][node.y] = PATH
+        grid[bestIndividual.path[-1].x][bestIndividual.path[-1].y] = PLANNER_PATH_1
+        world.frames.append(grid)           
 
-        elite = [] # we try to keep some of the better ones for better crossover, but definitely we keep the best best for comparison
-        for j in range(random.randrange(1, 25)):
-            elite.append(heapq.heap[j])
-        eliteCounter = 0
         # generate the new population
         newPopulation = []
         for k in range(populationSize):
-            mutateEliteProb = random.randint(0, 100)
-            crossoverEliteProb = random.randint(0,100)
-
-            if mutateEliteProb <= mutationProb:
+            mutateProb = random.randint(1, 100)         
+            chosenElite = elite[random.randrange(0, len(elite))]
+            indv = Individual()
+            if mutateProb <= mutationProb:
                 # mutate
-                indv = mutate(populationList[k], maxLength, mutationProb, newPositionList)
+                indv = mutate(chosenElite, maxLength, mutationProb, newPositionList)
                 newPopulation.append(indv)
-            elif mutateEliteProb >= 100 - eliteProb:
-                # add elite
-                newPopulation.append(elite[eliteCounter])
-                eliteCounter += 1
-            elif crossoverEliteProb <= eliteProb:     
-                # crossover with elite
-                left = elite[random.randrange(0, len(elite))]
-                right = populationList[k]
-                indv = crossover(left, right, maxLength)
+            elif mutateProb >= 90:
+                indv = dropOffMutate(chosenElite)
                 newPopulation.append(indv)
-            else:
-                # 2 random selection and crossover
-                left = populationList[random.randrange(0, len(populationList))]
-                right = populationList[k]
-                indv = crossover(left, right, maxLength)
+            else:     
+                # crossover         
+                indv = crossover(chosenElite, newPositionList, maxLength)
                 newPopulation.append(indv)
+        populationList = newPopulation
+
+    if bestIndividual.reached == True:
+        print("gen path found")
+        
+        # for vis
+        grid = copy.deepcopy(world.grid)
+        for node in bestIndividual.path[1:-1]:
+            if grid[node.x][node.y] != ROBOT and grid[node.x][node.y] != GOAL:
+                grid[node.x][node.y] = PATH
+        world.frames.append(grid)   
+
+        # for path
+        path = bestIndividual.path[1:-1]
+        return path
