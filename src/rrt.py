@@ -4,7 +4,7 @@ from common import *
 
 def rrtPlanner(world):
     startNode = Node(None, world.robot)
-    endNode = Node(None, world._goal)
+    endNode = Node(None, world.goal)
     stepSize = int(min(world._height, world._width) / 2)
     forwardTree = [startNode]
     reverseTree = [endNode]
@@ -77,7 +77,7 @@ def rrtPlanner(world):
                     prevForwardNode = copy.deepcopy(forwardNode)
                     if prevForwardNode not in forwardTree:
                         forwardTree.append(prevForwardNode)
-                    if forwardNode.position == world._goal:
+                    if forwardNode.position == world.goal:
                         print("rrt path found")
                         forwardOnly = True
                         pathFound = True

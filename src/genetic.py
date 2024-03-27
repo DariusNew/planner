@@ -4,7 +4,7 @@ import copy
 import tqdm
 from common import *
 
-class Individual:
+class Chromosome:
     def __init__(self):
         self.movement = []
         self.path = []
@@ -33,101 +33,101 @@ def createPopulation(size: int, length: int, newPositionList):
     populationList = []
     # create a population with completely random moves
     for i in range(size):
-        individual = Individual()
+        chromosome = Chromosome()
 
         for j in range(length):
-            individual.movement.append(newPositionList[random.randrange(0, len(newPositionList))])
+            chromosome.movement.append(newPositionList[random.randrange(0, len(newPositionList))])
 
-        populationList.append(individual)
+        populationList.append(chromosome)
     return populationList
 
 def findFitness(populationList, world):
-    for indv in populationList:
+    for chromo in populationList:
         blocked = 0
         valid = 0
         backtrack = 0
 
         pos = world.robot
-        indv.path = []
-        indv.path.append(pos)
-        for direction in indv.movement:
+        chromo.path = []
+        chromo.path.append(pos)
+        for direction in chromo.movement:
             newPos = GridCell(pos.x + direction.x, pos.y + direction.y)
             if not checkValid(newPos, world):
                 valid += 1
             elif world.grid[newPos.x][newPos.y] == OBSTACLE:
                 blocked += 1
             elif newPos == world._goal:
-                if newPos in indv.path:
+                if newPos in chromo.path:
                     backtrack += 1
-                indv.path.append(newPos)
-                indv.reached = True
+                chromo.path.append(newPos)
+                chromo.reached = True
                 break
             else:
-                if newPos in indv.path:
+                if newPos in chromo.path:
                     backtrack += 1
-                indv.path.append(newPos)
+                chromo.path.append(newPos)
                 pos = newPos
 
         distanceReward = 0
-        for node in indv.path:
+        for node in chromo.path:
             distanceReward += euclideanDist(node.x, node.y, world._goal.x, world._goal.y)
         penalty = valid + blocked + backtrack
-        endReward = euclideanDist(indv.path[-1].x, indv.path[-1].y, world._goal.x, world._goal.y)
+        endReward = euclideanDist(chromo.path[-1].x, chromo.path[-1].y, world._goal.x, world._goal.y)
         
-        if not indv.reached:
-            indv.fitness = distanceReward/len(indv.path) + penalty * 40 + len(indv.path) * 10 + endReward   
-            # print(indv.fitness, distanceReward / len(indv.path), penalty, len(indv.path), endReward)
+        if not chromo.reached:
+            chromo.fitness = distanceReward/len(chromo.path) + penalty * 40 + len(chromo.path) * 10 + endReward   
+            # print(chromo.fitness, distanceReward / len(chromo.path), penalty, len(chromo.path), endReward)
         else:
-            indv.fitness = distanceReward/len(indv.path) + penalty * 40 + len(indv.path) * 10 + endReward - 400
+            chromo.fitness = distanceReward/len(chromo.path) + penalty * 40 + len(chromo.path) * 10 + endReward - 400
         
-        if (indv.fitness < 0):
-            indv.fitness = 1
-        # print(indv, indv.fitness)
+        if (chromo.fitness < 0):
+            chromo.fitness = 1
+        # print(chromo, chromo.fitness)
 
-def mutate(indv: Individual, length: int, mutateProb: int, newPositionList):
-    individual = Individual()
+def mutate(chromo: Chromosome, length: int, mutateProb: int, newPositionList):
+    chromosome = Chromosome()
 
     for i in range(length):
         prob = random.randint(0,100)
         if prob <= mutateProb:
             # mutate
             direction = GridCell(0,0)
-            while direction != indv.movement[i]:
+            while direction != chromo.movement[i]:
                 direction = newPositionList[random.randrange(0, len(newPositionList))]
         else:
             # take wholesale
-            direction = indv.movement[i]
+            direction = chromo.movement[i]
 
-        individual.movement.append(direction)
-    return individual
+        chromosome.movement.append(direction)
+    return chromosome
 
-def dropOffMutate(indv: Individual):
-    individual = Individual()  
-    drop = random.randrange(0, len(indv.movement))
-    for i in range(len(indv.movement)):
+def dropOffMutate(chromo: Chromosome):
+    chromosome = Chromosome()  
+    drop = random.randrange(0, len(chromo.movement))
+    for i in range(len(chromo.movement)):
         if i != drop:
-            individual.movement.append(indv.movement[i])
-    individual.movement.append(indv.movement[drop])
-    return individual
+            chromosome.movement.append(chromo.movement[i])
+    chromosome.movement.append(chromo.movement[drop])
+    return chromosome
 
-def crossover(left: Individual, newPositionList, length: int):
-    individual = Individual()
+def crossover(left: Chromosome, newPositionList, length: int):
+    chromosome = Chromosome()
     loc = random.randrange(0, length)
     for i in range(loc):
-        individual.movement.append(left.movement[i])
+        chromosome.movement.append(left.movement[i])
     for j in range(loc, length):
-        individual.movement.append(newPositionList[random.randrange(0, len(newPositionList))])
+        chromosome.movement.append(newPositionList[random.randrange(0, len(newPositionList))])
 
-    return individual
+    return chromosome
 
 def geneticPlanner(world, iterations: int = 500):
     populationSize = 1000
     mutationProb = 50
-    dropOffMutationProb = 90
+    dropOffMutationProb = 85
     maxLength = max(world._width, world._height)*4
     newPositionList = generateNewPositionList(world._allowDiagonal)
     populationList = createPopulation(populationSize, maxLength, newPositionList)
-    bestIndividual = Individual()
+    bestChromosome = Chromosome()
 
     for iter in tqdm.tqdm(range(iterations)):
         findFitness(populationList, world)
@@ -135,17 +135,17 @@ def geneticPlanner(world, iterations: int = 500):
         
         elite = []
         for j in range(random.randrange(100, int(populationSize/2))):
-            ind = heapq.heappop(populationList)
-            elite.append(ind)
-        bestIndividual = elite[0]
-        # print("cycle: ", iter, "fitness: ", bestIndividual.fitness)
+            chromosome = heapq.heappop(populationList)
+            elite.append(chromosome)
+        bestChromosome = elite[0]
+        # print("cycle: ", iter, "fitness: ", bestChromosome.fitness)
 
         # for vis
         grid = copy.deepcopy(world.grid)
-        for node in bestIndividual.path[1:-1]:
+        for node in bestChromosome.path[1:-1]:
             if grid[node.x][node.y] != ROBOT and grid[node.x][node.y] != GOAL:
                 grid[node.x][node.y] = PATH
-        grid[bestIndividual.path[-1].x][bestIndividual.path[-1].y] = PLANNER_PATH_1
+        grid[bestChromosome.path[-1].x][bestChromosome.path[-1].y] = PLANNER_PATH_1
         world.frames.append(grid)           
 
         # generate the new population
@@ -153,30 +153,30 @@ def geneticPlanner(world, iterations: int = 500):
         for k in range(populationSize):
             mutateProb = random.randint(1, 100)         
             chosenElite = elite[random.randrange(0, len(elite))]
-            indv = Individual()
+            chromo = Chromosome()
             if mutateProb <= mutationProb:
                 # mutate
-                indv = mutate(chosenElite, maxLength, mutationProb, newPositionList)
-                newPopulation.append(indv)
-            elif mutateProb >= 90:
-                indv = dropOffMutate(chosenElite)
-                newPopulation.append(indv)
+                chromo = mutate(chosenElite, maxLength, mutationProb, newPositionList)
+                newPopulation.append(chromo)
+            elif mutateProb >= dropOffMutationProb:
+                chromo = dropOffMutate(chosenElite)
+                newPopulation.append(chromo)
             else:     
                 # crossover         
-                indv = crossover(chosenElite, newPositionList, maxLength)
-                newPopulation.append(indv)
+                chromo = crossover(chosenElite, newPositionList, maxLength)
+                newPopulation.append(chromo)
         populationList = newPopulation
 
-    if bestIndividual.reached == True:
+    if bestChromosome.reached == True:
         print("gen path found")
         
         # for vis
         grid = copy.deepcopy(world.grid)
-        for node in bestIndividual.path[1:-1]:
+        for node in bestChromosome.path[1:-1]:
             if grid[node.x][node.y] != ROBOT and grid[node.x][node.y] != GOAL:
                 grid[node.x][node.y] = PATH
         world.frames.append(grid)   
 
         # for path
-        path = bestIndividual.path[1:-1]
+        path = bestChromosome.path[1:-1]
         return path
