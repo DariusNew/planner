@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import font
-from common import Player, Move, Opponent
+from common import Player, Move, Opponent, Cell
 from itertools import cycle
 import json
 
@@ -78,10 +78,10 @@ class TicTacToeGame:
 
         return no_winner and all(played_moves)
 
-    def toggle_player(self):
+    def toggle_player(self) -> None:
         self.current_player = next(self._players)
     
-    def reset_game(self):
+    def reset_game(self) -> None:
         for row, row_content in enumerate(self._current_moves):
             for col, _ in enumerate(row_content):
                 row_content[col] = Move(row, col)
@@ -91,6 +91,21 @@ class TicTacToeGame:
         if self.current_player == DEFAULT_PLAYERS[1]:
             # always start with x
             self.current_player = next(self._players)
+
+    def get_board_state(self) -> tuple:
+        state = []
+
+        for row in range(ROW):
+            for col in range(COL):
+                if self._current_moves[row][col].label == "":
+                    state.append(Cell.NO_MOVE.value)
+                elif self._current_moves[row][col].label == "X":
+                    state.append(Cell.X.value)
+                elif self._current_moves[row][col].label == "O":
+                    state.append(Cell.O.value)
+
+        state = tuple(state)
+        return state
 
 class TicTacToeBoard(tk.Tk):
     def __init__(self, game: TicTacToeGame) -> None:
@@ -110,18 +125,20 @@ class TicTacToeBoard(tk.Tk):
         self._create_board_grid()
 
     def _load_policy(self) -> None:
-        vi_policy_path = "Policies/valueIteration.json"
-        pi_policy_path = "Policies/policyIteration.json"
+        vi_policy_path = "policies/valueIteration.json"
+        pi_policy_path = "policies/policyIteration.json"
 
         try:
-            self._value_iteration_policy = json.load(vi_policy_path)
+            with open(vi_policy_path, 'r') as json_file:
+                self._value_iteration_policy = json.load(json_file)
             self._vi_policy_loaded  = True
         except:
             self._vi_policy_loaded = False
             print("Failed to load value iteration policy")
         
         try:
-            self._policy_iteration_policy = json.load(pi_policy_path)
+            with open(pi_policy_path, 'r') as json_file:
+                self._policy_iteration_policy = json.load(json_file)
             self._pi_policy_loaded = True
         except: 
             self._pi_policy_loaded = False
@@ -166,64 +183,7 @@ class TicTacToeBoard(tk.Tk):
                 button = tk.Button(master = grid_frame, text = "", font = font.Font(size = 36, weight = "bold"), fg = "black", width = 3, height = 2, highlightbackground = "lightblue")
                 self._cells[button] = (row, col)
                 button.bind("<ButtonPress-1>", self.play)
-                button.grid(row = row, column = col, padx = 5, pady = 5, sticky = "nsew")
-
-    def play(self, event):
-        clicked_btn = event.widget
-        if self._game.current_player.label == self._player_label:
-            row, col = self._cells[clicked_btn]
-            move = Move(row, col, self._game.current_player.label)
-        elif self._opponent != Opponent.HUMAN:
-            self.play_computer()
-        else:
-            self._player_label = self._game.current_player.label
-
-        if self._game.is_valid_move(move):
-            self._update_button(clicked_btn)
-            self._game.process_move(move)
-
-            if self._game.is_tied():
-                self._update_display(msg = "Tied game!", color = "red")
-            elif self._game.has_winner():
-                self._highlight_cells()
-                msg = f'Player "{self._game.current_player.label}" won!'
-                color = self._game.current_player.color
-                self._update_display(msg, color)
-            else:
-                self._game.toggle_player()
-                msg = f"{self._game.current_player.label}'s turn"
-                self._update_display(msg)
-
-                if self._opponent != Opponent.HUMAN:
-                    self.play_computer()
-                else:
-                    self._player_label = self._game.current_player.label
-
-    def play_computer(self):      
-        if self._opponent == Opponent.VALUE_ITERATION:
-            index = self._value_iteration_policy
-        elif self._opponent == Opponent.POLICY_ITERATION:
-            index = self._policy_iteration_policy
-
-        row = index // ROW
-        col = index % COL
-        move = Move(row, col, self._game.current_player.label)
-
-        if self._game.is_valid_move(move):
-            self._update_grid(row, col)
-            self._game.process_move(move)
-
-            if self._game.is_tied():
-                self._update_display(msg = "Tied game!", color = "red")
-            elif self._game.has_winner():
-                self._highlight_cells()
-                msg = f'Player "{self._game.current_player.label}" won!'
-                color = self._game.current_player.color
-                self._update_display(msg, color)
-            else:
-                self._game.toggle_player()
-                msg = f"{self._game.current_player.label}'s turn"
-                self._update_display(msg)      
+                button.grid(row = row, column = col, padx = 5, pady = 5, sticky = "nsew")    
 
     def _update_button(self, clicked_btn) -> None:
         clicked_btn.config(text = self._game.current_player.label)
@@ -243,6 +203,70 @@ class TicTacToeBoard(tk.Tk):
         for button, coordinates in self._cells.items():
             if coordinates in self._game.winner_combo: 
                 button.config(highlightbackground = "red")
+
+    
+    def play(self, event):
+        clicked_btn = event.widget
+        if self._game.current_player.label == self._player_label:
+            row, col = self._cells[clicked_btn]
+            move = Move(row, col, self._game.current_player.label)
+
+            if self._game.is_valid_move(move):
+                self._update_button(clicked_btn)
+                self._game.process_move(move)
+
+                if self._game.is_tied():
+                    self._update_display(msg = "Tied game!", color = "red")
+                elif self._game.has_winner():
+                    self._highlight_cells()
+                    msg = f'Player "{self._game.current_player.label}" won!'
+                    color = self._game.current_player.color
+                    self._update_display(msg, color)
+                else:
+                    self._game.toggle_player()
+                    msg = f"{self._game.current_player.label}'s turn"
+                    self._update_display(msg)
+
+                    if self._opponent != Opponent.HUMAN:
+                        self.play_computer()
+                    else:
+                        self._player_label = self._game.current_player.label
+
+        elif self._opponent != Opponent.HUMAN:
+            self.play_computer()
+        else:
+            self._player_label = self._game.current_player.label
+
+    def play_computer(self):      
+        state = self._game.get_board_state()      
+        # if computer is O, invert X and O, policy assumes we are always playing X
+        if self._game.current_player.label == "O":
+            state = tuple(3-cell_state if cell_state != Cell.NO_MOVE.value else Cell.NO_MOVE.value for cell_state in state)
+
+        if self._opponent == Opponent.VALUE_ITERATION:
+            index = self._value_iteration_policy[str(state)]
+        elif self._opponent == Opponent.POLICY_ITERATION:
+            index = self._policy_iteration_policy[str(state)]
+
+        row = index // ROW
+        col = index % COL
+        move = Move(row, col, self._game.current_player.label)
+
+        if self._game.is_valid_move(move):
+            self._update_grid(row, col)
+            self._game.process_move(move)
+
+            if self._game.is_tied():
+                self._update_display(msg = "Tied game!", color = "red")
+            elif self._game.has_winner():
+                self._highlight_cells()
+                msg = f'Player "{self._game.current_player.label}" won!'
+                color = self._game.current_player.color
+                self._update_display(msg, color)
+            else:
+                self._game.toggle_player()
+                msg = f"{self._game.current_player.label}'s turn"
+                self._update_display(msg)  
 
     def reset_board(self) -> None:
         self._game.reset_game()
